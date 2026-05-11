@@ -1,0 +1,20 @@
+:80 {
+    # Reverse proxy to main EspoCRM application
+    reverse_proxy espocrm:80
+
+    # WebSocket support for real-time features
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websocket espocrm-websocket:8080
+
+    # Enable gzip compression
+    encode gzip
+
+    # Logging
+    log {
+        output file /data/access.log
+        format json
+    }
+}

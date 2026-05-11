@@ -1,0 +1,96 @@
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: espocrm-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      start_period: 10s
+      timeout: 10s
+      retries: 3
+    networks:
+      - espocrm
+
+  espocrm:
+    image: espocrm/espocrm:latest
+    container_name: espocrm-app
+    environment:
+      ESPOCRM_DATABASE_PLATFORM: Mysql
+      ESPOCRM_DATABASE_HOST: mariadb
+      ESPOCRM_DATABASE_NAME: ${MARIADB_DATABASE}
+      ESPOCRM_DATABASE_USER: ${MARIADB_USER}
+      ESPOCRM_DATABASE_PASSWORD: ${MARIADB_PASSWORD}
+      ESPOCRM_ADMIN_USERNAME: ${ESPOCRM_ADMIN_USERNAME}
+      ESPOCRM_ADMIN_PASSWORD: ${ESPOCRM_ADMIN_PASSWORD}
+      ESPOCRM_SITE_URL: ${ESPOCRM_SITE_URL}
+    volumes:
+      - ../volumes/espocrm:/var/www/html
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - espocrm
+
+  espocrm-daemon:
+    image: espocrm/espocrm:latest
+    container_name: espocrm-daemon
+    volumes:
+      - ../volumes/espocrm:/var/www/html
+    restart: unless-stopped
+    entrypoint: docker-daemon.sh
+    depends_on:
+      espocrm:
+        condition: service_started
+    networks:
+      - espocrm
+
+  espocrm-websocket:
+    image: espocrm/espocrm:latest
+    container_name: espocrm-websocket
+    environment:
+      ESPOCRM_CONFIG_USE_WEB_SOCKET: "true"
+      ESPOCRM_CONFIG_WEB_SOCKET_URL: ${ESPOCRM_WEBSOCKET_URL}
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
+      ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBMISSION_DSN: "tcp://espocrm-websocket:7777"
+    volumes:
+      - ../volumes/espocrm:/var/www/html
+    restart: unless-stopped
+    entrypoint: docker-websocket.sh
+    depends_on:
+      espocrm:
+        condition: service_started
+    networks:
+      - espocrm
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: espocrm-caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../volumes/caddy-data:/data
+      - ../volumes/caddy-config:/config
+    restart: unless-stopped
+    depends_on:
+      - espocrm
+      - espocrm-websocket
+    networks:
+      - espocrm
+
+volumes:
+  mariadb-data:
+    driver: local
+
+networks:
+  espocrm:
+    driver: bridge

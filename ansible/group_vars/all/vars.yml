@@ -1,0 +1,15 @@
+# EspoCRM Configuration
+# These are non-sensitive variables - passwords are in vault.yml
+
+# Database Configuration
+mariadb_database: espocrm
+mariadb_user: espocrm
+
+# EspoCRM Configuration
+espocrm_admin_username: admin
+espocrm_site_url: "http://localhost"
+espocrm_websocket_url: "ws://localhost:80/ws"
+
+# Paths
+compose_dir: "{{ playbook_dir }}/../compose"
+backup_dir: "{{ playbook_dir }}/../backups/data"
