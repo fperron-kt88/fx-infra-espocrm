@@ -86,7 +86,7 @@ services:
     image: caddy:2-alpine
     container_name: espocrm-caddy
     ports:
-      - "80:80"
+      - "8091:80"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ../volumes/caddy-data:/data
