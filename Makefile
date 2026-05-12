@@ -66,7 +66,7 @@ up: $(COMPOSE_DIR)/.env ## Start all EspoCRM services
 	$(DOCKER_COMPOSE) up -d
 	@echo ""
 	@echo "Services starting... wait 30 seconds for database initialization."
-	@echo "Access EspoCRM at: http://localhost"
+	@echo "Access EspoCRM at: http://localhost:8091"
 	@echo "Admin login: admin (password in .env)"
 
 down: ## Stop all services
