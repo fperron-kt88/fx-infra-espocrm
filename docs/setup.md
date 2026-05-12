@@ -1,6 +1,6 @@
 # EspoCRM Docker Compose Setup
 
-Complete Docker Compose setup for EspoCRM with MariaDB, Caddy reverse proxy, and ansible-vault for secrets management.
+Complete Docker Compose setup for EspoCRM with MariaDB and Caddy reverse proxy.
 
 ## Architecture
 
@@ -11,59 +11,41 @@ Complete Docker Compose setup for EspoCRM with MariaDB, Caddy reverse proxy, and
 └─────────────┘     └──────────────┘     └─────────────┘
                            │
                            ▼
-                    ┌──────────────┐
-                    │ EspoCRM      │
-                    │  Daemon      │
-                    │  (Jobs)      │
-                    └──────────────┘
+                     ┌──────────────┐
+                     │ EspoCRM      │
+                     │  Daemon      │
+                     │  (Jobs)      │
+                     └──────────────┘
                            │
                            ▼
-                    ┌──────────────┐
-                    │ EspoCRM      │
-                    │  WebSocket   │
-                    │ (Real-time)  │
-                    └──────────────┘
+                     ┌──────────────┐
+                     │ EspoCRM      │
+                     │  WebSocket   │
+                     │ (Real-time)  │
+                     └──────────────┘
 ```
 
 ## Requirements
 
 - Docker & Docker Compose
-- Poetry (Python dependency management)
 - Make
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Configure Secrets
+
+Copy the environment template and set your passwords:
 
 ```bash
-# Install ansible via poetry
-poetry install
+cp compose/.env.example compose/.env
 ```
 
-### 2. Configure Secrets
+Edit `compose/.env` and set these values:
+- `MARIADB_ROOT_PASSWORD` - MariaDB root password
+- `MARIADB_PASSWORD` - MariaDB application user password
+- `ESPOCRM_ADMIN_PASSWORD` - EspoCRM admin user password
 
-Edit the encrypted vault file to set your passwords:
-
-```bash
-make vault-edit
-```
-
-**Default vault password:** `setup` (change this after first setup!)
-
-The vault contains:
-- `mariadb_root_password` - MariaDB root password
-- `mariadb_password` - MariaDB application user password  
-- `espocrm_admin_password` - EspoCRM admin user password
-
-### 3. Initial Setup
-
-Generate the `.env` file from vault secrets:
-
-```bash
-make setup
-```
-
-### 4. Start Services
+### 2. Start Services
 
 ```bash
 make up
@@ -71,7 +53,7 @@ make up
 
 Wait ~30 seconds for database initialization, then access:
 - **EspoCRM:** http://localhost
-- **Login:** admin / (password from vault)
+- **Login:** admin / (password from .env)
 
 ## Daily Operations
 
@@ -100,8 +82,7 @@ make restore FILE=backups/data/espocrm_backup_YYYYMMDD_HHMMSS.sql
 
 ### Update Secrets
 ```bash
-make vault-edit        # Edit passwords
-make setup             # Regenerate .env
+# Edit compose/.env with new passwords
 make restart           # Restart with new secrets
 ```
 
@@ -110,16 +91,6 @@ make restart           # Restart with new secrets
 make down              # Stop containers (keep data)
 make clean             # Stop and remove all data (DANGEROUS)
 ```
-
-## Changing Vault Password
-
-To change the ansible-vault encryption password:
-
-```bash
-make vault-rekey
-```
-
-You'll be prompted for the old password, then the new one.
 
 ## Project Structure
 
@@ -131,27 +102,13 @@ You'll be prompted for the old password, then the new one.
 │   ├── caddy/
 │   │   └── Caddyfile        # Reverse proxy config
 │   ├── .env.example         # Environment template
+│   ├── .env                 # Your secrets (gitignored)
 │   └── volumes/             # Persistent data (gitignored)
-├── ansible/
-│   ├── ansible.cfg          # Ansible configuration
-│   ├── inventory            # Localhost inventory
-│   └── group_vars/
-│       └── all/
-│           ├── vars.yml     # Non-sensitive variables
-│           └── vault.yml    # ENCRYPTED secrets
 ├── backups/
 │   └── data/                # Database backups (gitignored)
 └── docs/
     └── setup.md             # This file
 ```
-
-## Security Notes
-
-- **Never commit** `.env` files or unencrypted passwords
-- The vault password is entered manually (no password file by default)
-- All sensitive data is stored in `ansible/group_vars/all/vault.yml` (encrypted)
-- Volume data in `compose/volumes/` is gitignored
-- Backups in `backups/data/` are gitignored
 
 ## Troubleshooting
 
@@ -171,7 +128,6 @@ mariadb -u espocrm -p -D espocrm
 ### Reset everything (DESTRUCTIVE)
 ```bash
 make clean               # Remove all containers and volumes
-make setup               # Re-initialize
 make up                  # Start fresh
 ```
 
@@ -184,13 +140,6 @@ After initial setup, you can configure EspoCRM through the web UI:
 ## Updating EspoCRM
 
 ```bash
-cd compose/
-docker compose pull
-docker compose up -d
-```
-
-Or simply:
-```bash
 make down
 make up
 ```
@@ -199,4 +148,3 @@ make up
 
 - [EspoCRM Documentation](https://docs.espocrm.com/)
 - [EspoCRM Docker Hub](https://hub.docker.com/r/espocrm/espocrm)
-- [Ansible Vault Documentation](https://docs.ansible.com/ansible/latest/vault_guide/index.html)

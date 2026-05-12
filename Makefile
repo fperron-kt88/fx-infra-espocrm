@@ -1,101 +1,110 @@
-.PHONY: help up down restart logs shell backup restore vault-edit vault-view status clean
+.PHONY: help setup fix-perms up down restart status logs logs-svc shell db-shell backup restore clean
 
-# Default target
-help:
-	@echo "EspoCRM Docker Compose Management"
-	@echo "=================================="
-	@echo ""
-	@echo "Available targets:"
-	@echo "  up          - Start all services"
-	@echo "  down        - Stop all services"
-	@echo "  restart     - Restart all services"
-	@echo "  status      - Check service status"
-	@echo "  logs        - View all service logs (follow mode)"
-	@echo "  logs-svc    - View logs for specific service (use: make logs-svc SVC=espocrm)"
-	@echo "  shell       - Access EspoCRM container shell"
-	@echo "  db-shell    - Access MariaDB container shell"
-	@echo "  backup      - Create database backup"
-	@echo "  restore     - Restore from latest backup (use: make restore FILE=path/to/backup.sql)"
-	@echo "  vault-edit  - Edit encrypted vault secrets"
-	@echo "  vault-view  - View encrypted vault secrets"
-	@echo "  clean       - Remove all containers and volumes (WARNING: destructive)"
-	@echo ""
-	@echo "Environment setup:"
-	@echo "  setup       - Initial setup (generate .env from vault)"
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
 
-# Directories
 COMPOSE_DIR = compose
 BACKUP_DIR = backups/data
-VAULT_FILE = ansible/group_vars/all/vault.yml
-
-# Use poetry run for ansible commands
-ANSIBLE_VAULT = poetry run ansible-vault
 DOCKER_COMPOSE = docker compose -f $(COMPOSE_DIR)/docker-compose.yml
 
-# Initial setup
-setup:
-	@echo "Setting up environment..."
-	$(ANSIBLE_VAULT) view $(VAULT_FILE) > /dev/null 2>&1 || (echo "Error: Cannot read vault. Run 'make vault-edit' first to set passwords." && exit 1)
-	@echo "Generating .env file from vault..."
-	@mkdir -p $(COMPOSE_DIR)/volumes/espocrm $(COMPOSE_DIR)/volumes/caddy-data $(COMPOSE_DIR)/volumes/caddy-config
-	@$(ANSIBLE_VAULT) view $(VAULT_FILE) | grep -E '^(mariadb_root_password|mariadb_password|espocrm_admin_password):' | sed 's/: /=/; s/^mariadb_root_password/MARIADB_ROOT_PASSWORD/; s/^mariadb_password/MARIADB_PASSWORD/; s/^espocrm_admin_password/ESPOCRM_ADMIN_PASSWORD/' > $(COMPOSE_DIR)/.env
-	@echo 'MARIADB_DATABASE=espocrm' >> $(COMPOSE_DIR)/.env
-	@echo 'MARIADB_USER=espocrm' >> $(COMPOSE_DIR)/.env
-	@echo 'ESPOCRM_ADMIN_USERNAME=admin' >> $(COMPOSE_DIR)/.env
-	@echo 'ESPOCRM_SITE_URL=http://localhost' >> $(COMPOSE_DIR)/.env
-	@echo 'ESPOCRM_WEBSOCKET_URL=ws://localhost/ws' >> $(COMPOSE_DIR)/.env
-	@echo "Setup complete! .env file created."
-	@echo "IMPORTANT: Review and update passwords with 'make vault-edit' before starting services."
+# ═══════════════════════════════════════════════════════════════════════════════
+# HELP & SETUP
+# ═══════════════════════════════════════════════════════════════════════════════
 
-# Start services
-up: $(COMPOSE_DIR)/.env
+help: ## Display this help message with colorized output
+	@echo ""
+	@echo "\033[1;36m╔════════════════════════════════════════════════════════════════════════╗\033[0m"
+	@echo "\033[1;36m║           \033[1;33mEspoCRM Docker Compose Management\033[1;36m                           ║\033[0m"
+	@echo "\033[1;36m╚════════════════════════════════════════════════════════════════════════╝\033[0m"
+	@echo ""
+	@echo "\033[1;35m🔐 Setup:\033[0m"
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(setup|fix-perms)" | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "\033[1;35m🚀 Service Management:\033[0m"
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(^up:|^down:|^restart:|^status:)" | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[32m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "\033[1;35m🔍 Debugging & Access:\033[0m"
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(logs|shell)" | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[33m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "\033[1;35m💾 Data Management:\033[0m"
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E "(backup|restore|clean)" | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[31m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+
+setup: ## Initialize or regenerate .env from template
+	@if [ ! -f $(COMPOSE_DIR)/.env ]; then \
+		cp $(COMPOSE_DIR)/.env.example $(COMPOSE_DIR)/.env; \
+		echo "Created compose/.env from template."; \
+	else \
+		echo "compose/.env already exists."; \
+	fi
+	@echo "IMPORTANT: Edit compose/.env to set your passwords before starting services."
+
+$(COMPOSE_DIR)/.env: $(COMPOSE_DIR)/.env.example
+	@cp $(COMPOSE_DIR)/.env.example $(COMPOSE_DIR)/.env
+	@echo "Created compose/.env from template."
+	@echo "Edit compose/.env to set your passwords before starting services."
+	@echo "Run 'make up' again when ready."
+	@exit 1
+
+fix-perms: ## Fix permissions on volumes/ (Docker containers create files as root)
+	@echo "Fixing permissions on volumes/..."
+	@sudo chown $(shell whoami):$(shell whoami) volumes/
+	@sudo chmod 755 volumes/caddy-config/caddy volumes/caddy-data/caddy volumes/caddy-data/caddy/locks 2>/dev/null || true
+	@sudo chmod 644 volumes/caddy-data/access.log 2>/dev/null || true
+	@echo "Done."
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SERVICE MANAGEMENT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+up: $(COMPOSE_DIR)/.env ## Start all EspoCRM services
 	@echo "Starting EspoCRM services..."
 	$(DOCKER_COMPOSE) up -d
 	@echo ""
 	@echo "Services starting... wait 30 seconds for database initialization."
 	@echo "Access EspoCRM at: http://localhost"
-	@echo "Admin login: admin (password in vault)"
+	@echo "Admin login: admin (password in .env)"
 
-# Stop services
-down:
+down: ## Stop all services
 	@echo "Stopping EspoCRM services..."
 	$(DOCKER_COMPOSE) down
 
-# Restart services
-restart: down up
+restart: down up ## Restart all services (down + up)
 
-# Check status
-status:
+status: ## Check service status
 	$(DOCKER_COMPOSE) ps
 
-# View logs
-logs:
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEBUGGING & ACCESS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+logs: ## View all service logs (follow mode)
 	$(DOCKER_COMPOSE) logs -f
 
-# View logs for specific service
-logs-svc:
+logs-svc: ## View logs for specific service (usage: make logs-svc SVC=espocrm)
 	$(DOCKER_COMPOSE) logs -f $(SVC)
 
-# Access EspoCRM container shell
-shell:
+shell: ## Access EspoCRM container shell
 	$(DOCKER_COMPOSE) exec espocrm bash
 
-# Access MariaDB container shell
-db-shell:
+db-shell: ## Access MariaDB container shell (prompts for password)
 	$(DOCKER_COMPOSE) exec mariadb mariadb -u root -p
 
-# Create backup
-backup:
+# ═══════════════════════════════════════════════════════════════════════════════
+# DATA MANAGEMENT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+backup: ## Create database and files backup with timestamp
 	@mkdir -p $(BACKUP_DIR)
 	@echo "Creating database backup..."
-	$(DOCKER_COMPOSE) exec -T mariadb mariadb-dump -u root -p"$$(grep MARIADB_ROOT_PASSWORD $(COMPOSE_DIR)/.env | cut -d= -f2)" espocrm > $(BACKUP_DIR)/espocrm_backup_$$(date +%Y%m%d_%H%M%S).sql
+	$(DOCKER_COMPOSE) exec -T mariadb mariadb-dump -u root -p"$$(grep MARIADB_ROOT_PASSWORD $(COMPOSE_DIR)/.env | cut -d= -f2-)" espocrm > $(BACKUP_DIR)/espocrm_backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "Creating EspoCRM files backup..."
-	tar -czf $(BACKUP_DIR)/espocrm_files_$$(date +%Y%m%d_%H%M%S).tar.gz -C $(COMPOSE_DIR)/volumes espocrm/
+	tar -czf $(BACKUP_DIR)/espocrm_files_$$(date +%Y%m%d_%H%M%S).tar.gz -C volumes espocrm/
 	@echo "Backup complete!"
 	@ls -lh $(BACKUP_DIR)/*.sql $(BACKUP_DIR)/*.tar.gz 2>/dev/null | tail -2
 
-# Restore from backup
-restore:
+restore: ## Restore from backup (usage: make restore FILE=backups/data/backup.sql)
 	@if [ -z "$(FILE)" ]; then \
 		echo "Error: Please specify backup file with FILE=path/to/backup.sql"; \
 		echo "Available backups:"; \
@@ -103,32 +112,11 @@ restore:
 		exit 1; \
 	fi
 	@echo "Restoring from $(FILE)..."
-	$(DOCKER_COMPOSE) exec -T mariadb mariadb -u root -p"$$(grep MARIADB_ROOT_PASSWORD $(COMPOSE_DIR)/.env | cut -d= -f2)" espocrm < $(FILE)
+	$(DOCKER_COMPOSE) exec -T mariadb mariadb -u root -p"$$(grep MARIADB_ROOT_PASSWORD $(COMPOSE_DIR)/.env | cut -d= -f2-)" espocrm < $(FILE)
 	@echo "Restore complete!"
 
-# Edit vault secrets
-vault-edit:
-	$(ANSIBLE_VAULT) edit $(VAULT_FILE)
-	@if [ -f $(COMPOSE_DIR)/.env ]; then \
-		echo "Vault updated. Run 'make setup' to regenerate .env file with new values."; \
-	fi
-
-# View vault secrets
-vault-view:
-	$(ANSIBLE_VAULT) view $(VAULT_FILE)
-
-# Re-encrypt vault with different password
-vault-rekey:
-	$(ANSIBLE_VAULT) rekey $(VAULT_FILE)
-
-# Clean up (destructive)
-clean: down
+clean: down ## ⚠️  Remove all containers and volumes (DESTRUCTIVE - asks for confirmation)
 	@echo "WARNING: This will remove all containers, volumes, and data!"
 	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	$(DOCKER_COMPOSE) down -v
 	@echo "Cleanup complete."
-
-# Check if .env exists
-$(COMPOSE_DIR)/.env:
-	@echo "Error: .env file not found. Run 'make setup' first."
-	@exit 1

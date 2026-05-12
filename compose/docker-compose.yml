@@ -43,13 +43,19 @@ services:
   espocrm-daemon:
     image: espocrm/espocrm:latest
     container_name: espocrm-daemon
+    environment:
+      ESPOCRM_DATABASE_PLATFORM: Mysql
+      ESPOCRM_DATABASE_HOST: mariadb
+      ESPOCRM_DATABASE_NAME: ${MARIADB_DATABASE}
+      ESPOCRM_DATABASE_USER: ${MARIADB_USER}
+      ESPOCRM_DATABASE_PASSWORD: ${MARIADB_PASSWORD}
     volumes:
       - ../volumes/espocrm:/var/www/html
     restart: unless-stopped
     entrypoint: docker-daemon.sh
     depends_on:
-      espocrm:
-        condition: service_started
+      mariadb:
+        condition: service_healthy
     networks:
       - espocrm
 
@@ -57,6 +63,11 @@ services:
     image: espocrm/espocrm:latest
     container_name: espocrm-websocket
     environment:
+      ESPOCRM_DATABASE_PLATFORM: Mysql
+      ESPOCRM_DATABASE_HOST: mariadb
+      ESPOCRM_DATABASE_NAME: ${MARIADB_DATABASE}
+      ESPOCRM_DATABASE_USER: ${MARIADB_USER}
+      ESPOCRM_DATABASE_PASSWORD: ${MARIADB_PASSWORD}
       ESPOCRM_CONFIG_USE_WEB_SOCKET: "true"
       ESPOCRM_CONFIG_WEB_SOCKET_URL: ${ESPOCRM_WEBSOCKET_URL}
       ESPOCRM_CONFIG_WEB_SOCKET_ZERO_M_Q_SUBSCRIBER_DSN: "tcp://*:7777"
@@ -66,8 +77,8 @@ services:
     restart: unless-stopped
     entrypoint: docker-websocket.sh
     depends_on:
-      espocrm:
-        condition: service_started
+      mariadb:
+        condition: service_healthy
     networks:
       - espocrm
 
