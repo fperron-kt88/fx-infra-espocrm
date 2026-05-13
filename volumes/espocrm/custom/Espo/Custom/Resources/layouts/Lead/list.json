@@ -1,0 +1,27 @@
+[
+    {
+        "name": "name",
+        "link": "true"
+    },
+    {
+        "name": "createdAccount",
+        "width": 16
+    },
+    {
+        "name": "status",
+        "width": 15
+    },
+    {
+        "name": "emailAddress",
+        "width": 20,
+        "notSortable": true
+    },
+    {
+        "name": "assignedUser",
+        "width": 18
+    },
+    {
+        "name": "createdAt",
+        "width": 13
+    }
+]
