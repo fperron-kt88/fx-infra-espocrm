@@ -118,6 +118,11 @@ restore: ## Restore from backup (usage: make restore FILE=backups/data/backup.sq
 	$(DOCKER_COMPOSE) exec -T mariadb mariadb -u root -p"$$(grep MARIADB_ROOT_PASSWORD $(COMPOSE_DIR)/.env | cut -d= -f2-)" espocrm < $(FILE)
 	@echo "Restore complete!"
 
+prune-backups: ## Keep only the 3 most recent backup files
+	@ls -t $(BACKUP_DIR)/*.sql 2>/dev/null | tail -n +4 | xargs rm -f || true
+	@ls -t $(BACKUP_DIR)/*.tar.gz 2>/dev/null | tail -n +4 | xargs rm -f || true
+	@echo "Pruned old backups, keeping 3 most recent."
+
 clean: down ## ⚠️  Remove all containers, volumes, and data (DESTRUCTIVE - asks for confirmation)
 	@echo "WARNING: This will remove all containers, volumes, and data!"
 	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
