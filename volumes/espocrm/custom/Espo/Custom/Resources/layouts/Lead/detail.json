@@ -1,0 +1,81 @@
+[
+    {
+        "rows": [
+            [
+                {
+                    "name": "name"
+                },
+                {
+                    "name": "accountName"
+                }
+            ],
+            [
+                {
+                    "name": "emailAddress"
+                },
+                {
+                    "name": "phoneNumber"
+                }
+            ],
+            [
+                {
+                    "name": "title"
+                },
+                {
+                    "name": "website"
+                }
+            ],
+            [
+                {
+                    "name": "address"
+                },
+                false
+            ]
+        ],
+        "style": "default",
+        "label": "Overview"
+    },
+    {
+        "rows": [
+            [
+                {
+                    "name": "status"
+                },
+                {
+                    "name": "source"
+                }
+            ],
+            [
+                {
+                    "name": "opportunityAmount"
+                },
+                {
+                    "name": "campaign"
+                }
+            ],
+            [
+                {
+                    "name": "industry"
+                },
+                {
+                    "name": "cNiche"
+                }
+            ],
+            [
+                {
+                    "name": "description"
+                }
+            ],
+            [
+                {
+                    "name": "cSecteursActivite"
+                },
+                {
+                    "name": "cOpportuniteHypothese"
+                }
+            ]
+        ],
+        "style": "default",
+        "label": "Details"
+    }
+]
