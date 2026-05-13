@@ -47,6 +47,20 @@
             "cutHeight": 200,
             "maxLength": 2048,
             "isCustom": true
+        },
+        "cInfosBrutes": {
+            "type": "text",
+            "rowsMin": 2,
+            "cutHeight": 200,
+            "maxLength": 2048,
+            "isCustom": true
+        },
+        "cCampaignTag": {
+            "type": "text",
+            "rowsMin": 2,
+            "cutHeight": 200,
+            "maxLength": 256,
+            "isCustom": true
         }
     }
 }

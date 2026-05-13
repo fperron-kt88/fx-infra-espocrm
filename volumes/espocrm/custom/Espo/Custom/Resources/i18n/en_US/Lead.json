@@ -16,6 +16,8 @@
     "fields": {
         "cNiche": "Niche",
         "cSecteursActivite": "SecteursActivite",
-        "cOpportuniteHypothese": "OpportuniteHypothese"
+        "cOpportuniteHypothese": "OpportuniteHypothese",
+        "cInfosBrutes": "InfosBrutes",
+        "cCampaignTag": "CampaignTag"
     }
 }

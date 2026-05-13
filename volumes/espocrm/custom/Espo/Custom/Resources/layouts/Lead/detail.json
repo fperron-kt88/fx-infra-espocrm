@@ -30,6 +30,11 @@
                     "name": "address"
                 },
                 false
+            ],
+            [
+                {
+                    "name": "cCampaignTag"
+                }
             ]
         ],
         "style": "default",
@@ -72,6 +77,11 @@
                 },
                 {
                     "name": "cOpportuniteHypothese"
+                }
+            ],
+            [
+                {
+                    "name": "cInfosBrutes"
                 }
             ]
         ],
