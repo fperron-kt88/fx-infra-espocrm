@@ -1,7 +1,20 @@
 .env
 compose/.env
 compose/volumes/
-volumes/
 backups/data/
 
 .tags
+
+# Ignore everything in volumes
+volumes/*
+
+# Keep espocrm tree visible
+!volumes/espocrm/
+
+# Ignore runtime inside espocrm
+volumes/espocrm/*
+!volumes/espocrm/custom/
+
+# Track all customizations
+!volumes/espocrm/custom/**
+

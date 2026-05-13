@@ -127,5 +127,5 @@ clean: down ## ⚠️  Remove all containers, volumes, and data (DESTRUCTIVE - a
 	@echo "WARNING: This will remove all containers, volumes, and data!"
 	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	$(DOCKER_COMPOSE) down -v
-	@sudo rm -rf volumes/espocrm/data volumes/espocrm/custom volumes/espocrm/install/config.php 2>/dev/null || true
+	@sudo rm -rf volumes/espocrm/data volumes/espocrm/install/config.php 2>/dev/null || true
 	@echo "Cleanup complete."
