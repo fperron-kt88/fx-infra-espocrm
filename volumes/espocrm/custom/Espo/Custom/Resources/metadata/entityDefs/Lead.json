@@ -62,5 +62,22 @@
             "maxLength": 256,
             "isCustom": true
         }
-    }
+    },
+    "collection": {
+        "orderBy": "createdAt",
+        "order": "desc",
+        "textFilterFields": [
+            "name",
+            "accountName",
+            "emailAddress",
+            "cNiche",
+            "cOpportuniteHypothese",
+            "cSecteursActivite",
+            "cInfosBrutes",
+            "cCampaignTag"
+        ],
+        "fullTextSearch": false,
+        "countDisabled": false
+    },
+    "optimisticConcurrencyControl": false
 }

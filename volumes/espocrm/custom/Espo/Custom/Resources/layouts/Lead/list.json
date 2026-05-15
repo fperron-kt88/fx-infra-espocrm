@@ -4,6 +4,22 @@
         "link": "true"
     },
     {
+        "name": "cCampaignTag",
+        "width": 16
+    },
+    {
+        "name": "cNiche",
+        "width": 16
+    },
+    {
+        "name": "cSecteursActivite",
+        "width": 16
+    },
+    {
+        "name": "cInfosBrutes",
+        "width": 16
+    },
+    {
         "name": "createdAccount",
         "width": 16
     },
